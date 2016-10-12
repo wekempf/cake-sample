@@ -2,3 +2,7 @@ build_script:
     ps: .\build.ps1
 
 test: off
+
+environment:
+  CoverallsToken:
+    secure: 56WYCrEjtVvoHhDTyrbm3vsB2il4G3mMOQvRr3990fferkWtLTF54Ek+C85caulb

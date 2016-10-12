@@ -80,7 +80,7 @@ Task("Test")
 
         if (isRunningOnBuildServer) {
             CoverallsNet(coverageFile, CoverallsNetReportType.OpenCover, new CoverallsNetSettings {
-                RepoToken = "abdef"
+                RepoToken = EnvironmentVariable("CoverallsToken")
             });
         }
     });
