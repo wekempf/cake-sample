@@ -10,16 +10,22 @@ var target = Argument("target", "Default");
 var configuration = Argument("configuration", "Release");
 var isRunningOnBuildServer = AppVeyor.IsRunningOnAppVeyor;
 var updateAssemblyInfo = HasArgument("updateassemblyinfo") || isRunningOnBuildServer;
-var solutions = GetFiles("**/*.sln");
+var solutions = GetFiles("**/*.sln").Except(GetFiles("./.tools/**/packages"));
 var testResultsDir = Directory("./TestResults");
 var coverageFile = testResultsDir + File("coverage.xml");
 
 Task("Clean")
     .Does(() => {
-        var directories = GetDirectories("**/bin")
-            .Concat(GetDirectories("**/obj"))
-            .Concat(GetDirectories("**/packages"));
-        CleanDirectories(directories);
+        var binDirs = GetDirectories("**/bin");
+        var objDirs = GetDirectories("**/obj");
+        var testDirs = GetDirectories("**/TestResults");
+        var packageDirs = GetDirectories("**/packages").Except(GetDirectories("./.tools/**/packages"));
+        var directories = binDirs
+            .Concat(objDirs)
+            .Concat(testDirs)
+            .Concat(packageDirs)
+            .Where(d => DirectoryExists(d));
+        DeleteDirectories(directories, true);
 
         if (DirectoryExists(testResultsDir)) {
             DeleteDirectory(testResultsDir, true);
