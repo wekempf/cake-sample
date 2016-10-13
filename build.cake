@@ -89,8 +89,7 @@ Task("Test")
     });
 
 Task("NuGetPack")
-    //.IsDependentOn("Test")
-    .IsDependentOn("Version")
+    .IsDependentOn("Test")
     .Does(() => {
         // Bowling
         var outputDirectory = MakeAbsolute(Directory("./src/Bowling/bin/" + configuration)); 
