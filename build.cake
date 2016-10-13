@@ -13,6 +13,7 @@ var updateAssemblyInfo = HasArgument("updateassemblyinfo") || isRunningOnBuildSe
 var solutions = GetFiles("**/*.sln").Except(GetFiles("./.tools/**/packages"));
 var testResultsDir = Directory("./TestResults");
 var coverageFile = testResultsDir + File("coverage.xml");
+GitVersion version = null;
 
 Task("Clean")
     .Does(() => {
@@ -37,7 +38,7 @@ Task("Clean")
 
 Task("Version")
     .Does(() =>{
-        var version = GitVersion(new GitVersionSettings{
+        version = GitVersion(new GitVersionSettings{
             UpdateAssemblyInfo = updateAssemblyInfo
         });
         Information("Version: {0}", version.AssemblySemVer);
@@ -59,7 +60,9 @@ Task("Build")
     .IsDependentOn("Version")
     .Does(() => {
         foreach (var sln in solutions) {
-            MSBuild(sln);
+            MSBuild(sln, new MSBuildSettings {
+                Configuration = configuration
+            });
         }
     });
 
@@ -85,7 +88,39 @@ Task("Test")
         }
     });
 
+Task("NuGetPack")
+    //.IsDependentOn("Test")
+    .IsDependentOn("Version")
+    .Does(() => {
+        // Bowling
+        var outputDirectory = MakeAbsolute(Directory("./src/Bowling/bin/" + configuration)); 
+        NuGetPack(new NuGetPackSettings
+        {
+            Id = "Bowling",
+            Version = version.NuGetVersion,
+            Title = "Bowling Kata Example",
+            Authors = new[] { "William E. Kempf" },
+            Owners = new[] { "William E. Kempf" },
+            Description = "A sample library for the well known Bowling Kata",
+            Summary = "This sample library is created by the sample build found at https://github.com/wekempf/cake-sample.",
+            ProjectUrl = new Uri("https://github.com/wekempf/cake-sample"),
+            IconUrl = new Uri("https://nuget.org/Content/Images/packageDefaultIcon-50x50.png"),
+            LicenseUrl = new Uri("https://github.com/wekempf/cake-sample/blob/master/LICENSE.txt"),
+            Copyright = "William E. Kempf 2016",
+            ReleaseNotes = new[] { "something" },
+            Tags = new[] { "Cake", "Script", "Sample", "Build" },
+            RequireLicenseAcceptance = false,
+            Symbols = true,
+            NoPackageAnalysis = false,
+            Files = new[] {
+                new NuSpecContent { Source = outputDirectory + "/Bowling.dll", Target = "lib/net461" }
+            },
+            BasePath = outputDirectory,
+            OutputDirectory = outputDirectory
+        });
+    });
+
 Task("Default")
-    .IsDependentOn("Test");
+    .IsDependentOn("NuGetPack");
 
 RunTarget(target);
